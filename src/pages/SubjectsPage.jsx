@@ -4,20 +4,40 @@ import { getAllSubjects } from '../db/indexedDB.js';
 
 export default function SubjectsPage() {
   const navigate = useNavigate();
-  const [subjects, setSubjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
+  // ── ALL hooks must be called before any early return ────────────────────
+  const [subjects,      setSubjects]      = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState(null);
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  // Load subjects
   useEffect(() => {
     getAllSubjects()
       .then((data) => { setSubjects(data); setLoading(false); })
-      .catch((err) => { setError(err.message); setLoading(false); });
+      .catch((err)  => { setError(err.message); setLoading(false); });
   }, []);
 
-  function handleSelect(subject) {
-    navigate(`/subject/${subject.id}`);
+  // Capture PWA install prompt
+  useEffect(() => {
+    const onPrompt = (e) => { e.preventDefault(); setInstallPrompt(e); };
+    const onInstalled = () => setInstallPrompt(null);
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  function handleSelect(subject)  { navigate(`/subject/${subject.id}`); }
+  function handleInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    installPrompt.userChoice.then(() => setInstallPrompt(null));
   }
 
+  // ── Early returns (after all hooks) ────────────────────────────────────
   if (loading) {
     return (
       <div className="page center-page">
@@ -34,25 +54,6 @@ export default function SubjectsPage() {
         <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => window.location.reload()}>Retry</button>
       </div>
     );
-  }
-
-  // ── PWA Install Prompt ──────────────────────────────────────────────────
-  const [installPrompt, setInstallPrompt] = useState(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();          // stop the mini-infobar from appearing
-      setInstallPrompt(e);         // save it to trigger later
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', () => setInstallPrompt(null));
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  function handleInstall() {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    installPrompt.userChoice.then(() => setInstallPrompt(null));
   }
 
   return (
