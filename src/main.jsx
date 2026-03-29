@@ -4,6 +4,21 @@ import './index.css';
 import App from './App.jsx';
 import { deleteDB, seedDB } from './db/indexedDB.js';
 
+// ── Capture install prompt ASAP before React mounts ────────────────────────
+// beforeinstallprompt fires early in page load — before useEffect runs.
+// We store it globally and re-dispatch a custom event so React can pick it up.
+window.__installPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.__installPrompt = e;
+  window.dispatchEvent(new CustomEvent('installpromptready'));
+});
+window.addEventListener('appinstalled', () => {
+  window.__installPrompt = null;
+  window.dispatchEvent(new CustomEvent('appinstalled'));
+});
+
+
 // ── Register Service Worker (production only) ──────────────────────────────
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {

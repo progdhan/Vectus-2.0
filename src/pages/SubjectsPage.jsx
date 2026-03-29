@@ -18,12 +18,15 @@ export default function SubjectsPage() {
   }, []);
 
   useEffect(() => {
-    const onPrompt = (e) => { e.preventDefault(); setInstallPrompt(e); };
+    // Prompt may have already been captured globally before React mounted
+    if (window.__installPrompt) setInstallPrompt(window.__installPrompt);
+
+    const onReady = () => setInstallPrompt(window.__installPrompt);
     const onInstalled = () => setInstallPrompt(null);
-    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('installpromptready', onReady);
     window.addEventListener('appinstalled', onInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('installpromptready', onReady);
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
