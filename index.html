@@ -2,26 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0B0E1A" />
-    <meta name="description" content="Vectus – Offline-first adaptive learning app for students. Works without internet. 5 subjects, gamified quizzes, and personalized difficulty." />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6c63ff" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Vectus" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.json" />
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="Vectus – Adaptive Learning" />
-    <meta property="og:description" content="Learn anywhere, even without internet. Quizzes, lessons, and progress tracking." />
-    <meta property="og:type" content="website" />
+    <!-- SEO -->
+    <title>Vectus — Offline Adaptive Learning</title>
+    <meta name="description" content="An offline-first adaptive learning app. Study lessons, take quizzes, and level up — no internet required after first load." />
 
-    <title>Vectus – Adaptive Learning</title>
-    <script type="module" crossorigin src="/assets/index-Z47Hdq9u.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-bsuPPl2D.css">
-  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+    <!-- Favicon placeholder -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236c63ff'/><text y='72' x='18' font-size='65' font-family='sans-serif' font-weight='bold' fill='white'>V</text></svg>" />
+  </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
