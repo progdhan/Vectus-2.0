@@ -24,12 +24,11 @@
       (function (l) {
         if (l.search[1] === 'p') {
           var params = l.search.slice(1).split('&');
-          var path   = params[0].slice(2).replace(/~and~/g, '&');
-          var query  = params[1] ? '?' + params[1].slice(2).replace(/~and~/g, '&') : '';
-          window.history.replaceState(
-            null, null,
-            l.pathname.split('/').slice(0, 2).join('/') + '/' + path + query + l.hash
-          );
+          // path from 404.html already has leading '/', strip it to avoid double-slash
+          var path  = params[0].slice(2).replace(/^\//, '').replace(/~and~/g, '&');
+          var query = params[1] ? '?' + params[1].slice(2).replace(/~and~/g, '&') : '';
+          // l.pathname ends with '/' (e.g. '/Vectus-2.0/'), so just append path
+          window.history.replaceState(null, null, l.pathname + path + query + l.hash);
         }
       }(window.location));
     </script>
