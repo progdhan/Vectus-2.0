@@ -1,56 +1,75 @@
 /**
- * Vectus Service Worker — v6
+ * Vectus Service Worker — v7
  *
- * Clean, simple, and robust:
- * - Install: pre-cache shell + auto-discover hashed assets from index.html
- * - Activate: delete old caches
- * - Fetch:
- *   - /sw.js → NOT intercepted (let browser handle SW update checks natively)
- *   - navigate → cache-first (SPA: always serve index.html from cache)
- *   - /assets/* → cache-first, populate on miss (immutable hashed files)
- *   - everything else → network-first with cache fallback
+ * Uses self.registration.scope so all URLs are relative to the SW's own
+ * scope — works correctly both on localhost and on GitHub Pages sub-paths
+ * like https://progdhan.github.io/Vectus-2.0/
  */
 
-const CACHE_NAME = 'vectus-v6';
+const CACHE_NAME = 'vectus-v7';
 
-/* ── Pre-cache on install ─────────────────────────────────────────────────── */
+function openCache() {
+  return caches.open(CACHE_NAME);
+}
+
+/** Resolve a path relative to the SW scope. */
+function scopeURL(path) {
+  // self.registration.scope always ends with '/'
+  return self.registration.scope + path.replace(/^\//, '');
+}
+
 async function precacheAll() {
-  const cache = await caches.open(CACHE_NAME);
+  const cache = await openCache();
+  const base  = self.registration.scope; // e.g. 'https://progdhan.github.io/Vectus-2.0/'
 
-  // 1. Shell — always needed
+  // 1. Pre-cache shell pages using scope-relative URLs
+  const shell = [base, base + 'index.html', base + 'manifest.json'];
   await Promise.allSettled(
-    ['/', '/index.html', '/manifest.json'].map((url) =>
-      fetch(url).then((r) => { if (r.ok) return cache.put(url, r); }).catch(() => {})
+    shell.map((url) =>
+      fetch(url)
+        .then((r) => { if (r.ok) return cache.put(url, r); })
+        .catch(() => {})
     )
   );
 
-  // 2. Discover hashed JS/CSS in index.html and pre-cache them
+  // 2. Parse index.html to discover hashed JS/CSS paths
   try {
-    const resp = await fetch('/');
+    const resp = await fetch(base + 'index.html');
     const html = await resp.text();
 
-    const assetUrls = [
-      ...html.matchAll(/href="(\/assets\/[^"?#]+)"/g),
-      ...html.matchAll(/src="(\/assets\/[^"?#]+)"/g),
+    // Match any href/src containing /assets/ (handles base-prefixed paths too)
+    const assetPaths = [
+      ...html.matchAll(/href="([^"]*\/assets\/[^"?#]+)"/g),
+      ...html.matchAll(/src="([^"]*\/assets\/[^"?#]+)"/g),
     ].map((m) => m[1]);
 
+    // Resolve against origin so both absolute (/Vectus-2.0/assets/…) and
+    // relative (assets/…) paths work correctly
+    const origin    = new URL(base).origin;
+    const assetURLs = assetPaths.map((p) =>
+      p.startsWith('http') ? p : origin + p
+    );
+
     await Promise.allSettled(
-      assetUrls.map((url) =>
-        fetch(url).then((r) => { if (r.ok) return cache.put(url, r); }).catch(() => {})
+      assetURLs.map((url) =>
+        fetch(url)
+          .then((r) => { if (r.ok) return cache.put(url, r); })
+          .catch(() => {})
       )
     );
 
-    console.log('[SW v6] Pre-cached assets:', assetUrls);
+    console.log('[SW v7] Pre-cached assets:', assetURLs);
   } catch (err) {
-    console.warn('[SW v6] Pre-cache error:', err.message);
+    console.warn('[SW v7] Pre-cache error:', err.message);
   }
 }
 
-/* ── Lifecycle ───────────────────────────────────────────────────────────── */
+/* ── Install ─────────────────────────────────────────────────────────────── */
 self.addEventListener('install', (event) => {
   event.waitUntil(precacheAll().then(() => self.skipWaiting()));
 });
 
+/* ── Activate ────────────────────────────────────────────────────────────── */
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
@@ -68,29 +87,27 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (!url.protocol.startsWith('http')) return;
 
-  // ✅ CRITICAL: Never intercept sw.js itself — let the browser handle it
-  // so its update check always gets the real network file
-  if (url.pathname === '/sw.js') return;
+  // Never intercept the SW script itself
+  if (url.pathname.endsWith('/sw.js')) return;
 
-  // SPA navigation → always serve cached index.html (React Router handles routing)
+  // SPA navigation → serve cached index.html (React Router handles routing)
   if (event.request.mode === 'navigate') {
+    const indexURL = self.registration.scope + 'index.html';
     event.respondWith(
-      caches
-        .match('/index.html')
-        .then((cached) => cached || fetch(event.request))
+      caches.match(indexURL).then((cached) => cached || fetch(event.request))
     );
     return;
   }
 
-  // Hashed assets → cache-first (they are immutable, safe to cache forever)
-  if (url.pathname.startsWith('/assets/')) {
+  // Hashed assets → cache-first (immutable)
+  if (url.pathname.includes('/assets/')) {
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached;
         return fetch(event.request).then((resp) => {
           if (resp.ok) {
             const clone = resp.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+            openCache().then((c) => c.put(event.request, clone));
           }
           return resp;
         });
@@ -99,13 +116,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Everything else (icons, manifest…) → network-first, cache fallback
+  // Everything else → network-first, cache fallback
   event.respondWith(
     fetch(event.request)
       .then((resp) => {
         if (resp.ok) {
           const clone = resp.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+          openCache().then((c) => c.put(event.request, clone));
         }
         return resp;
       })

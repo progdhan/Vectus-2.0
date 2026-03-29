@@ -8,7 +8,7 @@ import { deleteDB, seedDB } from './db/indexedDB.js';
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register(import.meta.env.BASE_URL + 'sw.js')
       .then((reg) => console.log('[SW] Registered:', reg.scope))
       .catch((err) => console.error('[SW] Failed:', err));
   });
