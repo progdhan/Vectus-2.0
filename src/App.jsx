@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import SubjectsPage     from './pages/SubjectsPage.jsx';
 import TopicsPage       from './pages/TopicsPage.jsx';
 import LessonDetailPage from './pages/LessonDetailPage.jsx';
@@ -9,7 +9,7 @@ import ProgressPage     from './pages/ProgressPage.jsx';
 
 export default function App() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <HashRouter>
       <Routes>
         <Route path="/"                   element={<SubjectsPage />}     />
         <Route path="/subject/:subjectId" element={<TopicsPage />}       />
@@ -19,6 +19,6 @@ export default function App() {
         <Route path="/progress"           element={<ProgressPage />}     />
         <Route path="*"                   element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
