@@ -103,7 +103,7 @@ export default function SubjectsPage() {
             <>
               <strong>Install Vectus:</strong><br />
               Click <b>⋮ Menu</b> → <b>Install app</b> or <b>Add to Home Screen</b>
-              <br /><small>The prompt will appear automatically on next visit.</small>
+              <br /><small>Or reload this page once for a one-click install button.</small>
             </>
           )}
         </div>
