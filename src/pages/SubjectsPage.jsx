@@ -78,7 +78,7 @@ export default function SubjectsPage() {
             aria-label="Install app"
             title="Install Vectus App"
           >
-            📲
+            📲 Install
           </button>
           <button
             className="progress-nav-btn"
