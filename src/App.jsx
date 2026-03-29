@@ -9,7 +9,7 @@ import ProgressPage     from './pages/ProgressPage.jsx';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/"                   element={<SubjectsPage />}     />
         <Route path="/subject/:subjectId" element={<TopicsPage />}       />
