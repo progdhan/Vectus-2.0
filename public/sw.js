@@ -6,7 +6,7 @@
  * like https://progdhan.github.io/Vectus-2.0/
  */
 
-const CACHE_NAME = 'vectus-v7';
+const CACHE_NAME = 'vectus-v8';
 
 function openCache() {
   return caches.open(CACHE_NAME);
@@ -90,11 +90,21 @@ self.addEventListener('fetch', (event) => {
   // Never intercept the SW script itself
   if (url.pathname.endsWith('/sw.js')) return;
 
-  // SPA navigation → serve cached index.html (React Router handles routing)
+  // Navigation → network-first so new deployments always load when online,
+  // falls back to cached index.html for offline use
   if (event.request.mode === 'navigate') {
     const indexURL = self.registration.scope + 'index.html';
     event.respondWith(
-      caches.match(indexURL).then((cached) => cached || fetch(event.request))
+      fetch(event.request)
+        .then((resp) => {
+          if (resp.ok) {
+            // Update cached index.html with the latest version
+            const clone = resp.clone();
+            openCache().then((c) => c.put(indexURL, clone));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(indexURL)) // offline fallback
     );
     return;
   }
