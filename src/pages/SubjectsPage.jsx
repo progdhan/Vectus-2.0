@@ -36,6 +36,25 @@ export default function SubjectsPage() {
     );
   }
 
+  // ── PWA Install Prompt ──────────────────────────────────────────────────
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();          // stop the mini-infobar from appearing
+      setInstallPrompt(e);         // save it to trigger later
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => setInstallPrompt(null));
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  function handleInstall() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    installPrompt.userChoice.then(() => setInstallPrompt(null));
+  }
+
   return (
     <div className="page subjects-page">
       {/* Header */}
@@ -45,13 +64,25 @@ export default function SubjectsPage() {
           <span className="app-name">Vectus</span>
           <span className="app-tagline">Adaptive Learning</span>
         </div>
-        <button
-          className="progress-nav-btn"
-          onClick={() => navigate('/progress')}
-          aria-label="View my progress"
-        >
-          📊
-        </button>
+        <div className="header-actions">
+          {installPrompt && (
+            <button
+              className="progress-nav-btn install-btn"
+              onClick={handleInstall}
+              aria-label="Install app"
+              title="Install Vectus App"
+            >
+              📲
+            </button>
+          )}
+          <button
+            className="progress-nav-btn"
+            onClick={() => navigate('/progress')}
+            aria-label="View my progress"
+          >
+            📊
+          </button>
+        </div>
       </header>
 
       {/* Body */}
