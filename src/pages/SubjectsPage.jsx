@@ -5,20 +5,18 @@ import { getAllSubjects } from '../db/indexedDB.js';
 export default function SubjectsPage() {
   const navigate = useNavigate();
 
-  // ── ALL hooks must be called before any early return ────────────────────
   const [subjects,      setSubjects]      = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(null);
   const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstallTip, setShowInstallTip] = useState(false);
 
-  // Load subjects
   useEffect(() => {
     getAllSubjects()
       .then((data) => { setSubjects(data); setLoading(false); })
       .catch((err)  => { setError(err.message); setLoading(false); });
   }, []);
 
-  // Capture PWA install prompt
   useEffect(() => {
     const onPrompt = (e) => { e.preventDefault(); setInstallPrompt(e); };
     const onInstalled = () => setInstallPrompt(null);
@@ -30,14 +28,21 @@ export default function SubjectsPage() {
     };
   }, []);
 
-  function handleSelect(subject)  { navigate(`/subject/${subject.id}`); }
+  function handleSelect(subject) { navigate(`/subject/${subject.id}`); }
+
   function handleInstall() {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    installPrompt.userChoice.then(() => setInstallPrompt(null));
+    if (installPrompt) {
+      installPrompt.prompt();
+      installPrompt.userChoice.then(() => setInstallPrompt(null));
+    } else {
+      // No native prompt yet — show manual instructions
+      setShowInstallTip((v) => !v);
+    }
   }
 
-  // ── Early returns (after all hooks) ────────────────────────────────────
+  // iOS detection
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
   if (loading) {
     return (
       <div className="page center-page">
@@ -66,16 +71,15 @@ export default function SubjectsPage() {
           <span className="app-tagline">Adaptive Learning</span>
         </div>
         <div className="header-actions">
-          {installPrompt && (
-            <button
-              className="progress-nav-btn install-btn"
-              onClick={handleInstall}
-              aria-label="Install app"
-              title="Install Vectus App"
-            >
-              📲
-            </button>
-          )}
+          {/* Install button — always visible */}
+          <button
+            className={`progress-nav-btn install-btn${installPrompt ? ' install-ready' : ''}`}
+            onClick={handleInstall}
+            aria-label="Install app"
+            title="Install Vectus App"
+          >
+            📲
+          </button>
           <button
             className="progress-nav-btn"
             onClick={() => navigate('/progress')}
@@ -85,6 +89,25 @@ export default function SubjectsPage() {
           </button>
         </div>
       </header>
+
+      {/* Install tip tooltip */}
+      {showInstallTip && (
+        <div className="install-tip" role="alert">
+          <button className="install-tip-close" onClick={() => setShowInstallTip(false)}>✕</button>
+          {isIOS ? (
+            <>
+              <strong>Install on iOS:</strong><br />
+              Tap <b>Share ↑</b> → <b>Add to Home Screen</b>
+            </>
+          ) : (
+            <>
+              <strong>Install Vectus:</strong><br />
+              Click <b>⋮ Menu</b> → <b>Install app</b> or <b>Add to Home Screen</b>
+              <br /><small>The prompt will appear automatically on next visit.</small>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Body */}
       <main className="subjects-main">
